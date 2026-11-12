@@ -1,0 +1,10 @@
+import {DatabaseSync} from 'node:sqlite';
+import {mkdirSync,readFileSync,writeFileSync,existsSync,unlinkSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+const dataDir=resolve(process.env.DATA_DIR||'data'),uploadDir=join(dataDir,'uploads');
+let cached:DatabaseSync|undefined;
+function db(){if(cached)return cached;mkdirSync(uploadDir,{recursive:true,mode:0o700});const d=new DatabaseSync(join(dataDir,'registrations.sqlite'));d.exec('PRAGMA busy_timeout=10000; PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');d.exec('BEGIN IMMEDIATE');try{if(!d.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='registrations'").get())d.exec(readFileSync(join(process.cwd(),'database/schema.sql'),'utf8').replaceAll('--> statement-breakpoint',''));d.exec('COMMIT')}catch(e){d.exec('ROLLBACK');d.close();throw e}cached=d;return d}
+function prepare(sql:string){return {bind(...args:any[]){const stmt=db().prepare(sql);return {sql,args,async first<T>(){return (stmt.get(...args)||null) as T|null},async all(){return {results:stmt.all(...args)}},async run(){return stmt.run(...args)}}}}}
+function filePath(key:string){if(!/^payment-proofs\/CCL-[A-F0-9]{12}\/[a-f0-9-]{36}$/.test(key))throw Error('Invalid file key');return join(uploadDir,key.replaceAll('/','_'))}
+export const env={DB:{prepare,async batch(cmds:Array<{sql:string;args:any[]}>){db().exec('BEGIN IMMEDIATE');try{const results=cmds.map(c=>db().prepare(c.sql).run(...c.args));db().exec('COMMIT');return results}catch(e){db().exec('ROLLBACK');throw e}}},BUCKET:{async put(key:string,bytes:Uint8Array,_options?:unknown){writeFileSync(filePath(key),bytes,{mode:0o600,flag:'wx'})},async get(key:string){const p=filePath(key);return existsSync(p)?{body:new Uint8Array(readFileSync(p))}:null},async delete(key:string){const p=filePath(key);if(existsSync(p))unlinkSync(p)}}};
+export function allApplications(){return db().prepare('SELECT id,company,team,status,created_at,data,rules_version FROM registrations ORDER BY created_at DESC').all().map((r:any)=>({...r,data:JSON.parse(r.data)}))}

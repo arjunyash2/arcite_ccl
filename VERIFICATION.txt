@@ -1,0 +1,6 @@
+Production Next.js build: PASS
+TypeScript: PASS
+Shell syntax (setup/backup): PASS
+Integration: PASS — real SQLite and upload files; invalid upload checks; origin rejection; session ownership; spoofed identity header rejection; duplicate request handling; protected organiser desk; restart persistence.
+Docker Engine was unavailable in the preparation environment, so docker compose execution was not tested here. Run setup.sh on the target VPS. No remote VPS or domain was accessed.
+No participant records or credentials are included.
