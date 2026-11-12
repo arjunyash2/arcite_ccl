@@ -1,0 +1,8 @@
+services:
+  app:
+    ports:
+      - "127.0.0.1:8085:3000"
+
+  caddy:
+    profiles:
+      - disabled
