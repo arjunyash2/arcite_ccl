@@ -15,11 +15,11 @@ jobs:
       - name: Check VPS host fingerprint
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_SSH_FINGERPRINT: SHA256:7NcDb8bNZ6R5DQvI08yslysO2FBMLOsJ0xbB/M9vV2c
+          VPS_SSH_FINGERPRINT: SHA256:QOz7U+JDfPMkToEwm+Fvw5fcy2AQEHCnoVUf7wb5CzY
         run: |
           set -euo pipefail
           echo "Resolved VPS host: $VPS_HOST"
-          actual="$(ssh-keyscan -T 10 -p 22 -t ed25519 "$VPS_HOST" 2>/dev/null | ssh-keygen -lf - -E sha256 | awk '{print $2; exit}')"
+          actual="$(ssh-keyscan -T 10 -p 22 -t rsa "$VPS_HOST" 2>/dev/null | ssh-keygen -lf - -E sha256 | awk '{print $2; exit}')"
           test "$actual" = "$VPS_SSH_FINGERPRINT"
 
       - name: Deploy over SSH
@@ -29,8 +29,7 @@ jobs:
           port: 22
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: SHA256:7NcDb8bNZ6R5DQvI08yslysO2FBMLOsJ0xbB/M9vV2c
-          script_stop: true
+          fingerprint: SHA256:QOz7U+JDfPMkToEwm+Fvw5fcy2AQEHCnoVUf7wb5CzY
           script: |
             set -e
             cd /opt/arcite-ccl
